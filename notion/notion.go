@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/imroc/req/v3"
+	"github.com/samber/lo"
 	"log/slog"
 	"time"
 )
@@ -39,7 +40,8 @@ func NewClient(token string, database string) (*Client, error) {
 		dataSource: dataSource,
 	}, nil
 }
-func (o *Client) GetAllEntries() ([]Object, error) {
+func (o *Client) GetAllEntries() (DiaryEntries, error) {
+	t := time.Now()
 	var query QueryDataSourceReq
 	var arr []Object
 	o.client.EnableDumpAll()
@@ -47,7 +49,7 @@ func (o *Client) GetAllEntries() ([]Object, error) {
 		var list List
 		_, err := o.client.R().SetSuccessResult(&list).SetBody(&query).Post("/data_sources/" + o.dataSource + "/query")
 		if err != nil {
-			return nil, err
+			return DiaryEntries{}, err
 		}
 		arr = append(arr, list.Results...)
 		if list.NextCursor == "" {
@@ -56,5 +58,18 @@ func (o *Client) GetAllEntries() ([]Object, error) {
 		query.StartCursor = list.NextCursor
 	}
 	slog.Debug("Retrieve from data source", "count", len(arr))
-	return arr, nil
+	return DiaryEntries{
+		Entries:   arr,
+		FetchTime: t,
+	}, nil
+}
+
+//func (o *Client) UpdateWordCount(diaryEntries DiaryEntries) error {
+//	arr:=GetStaleEntries(diaryEntries)
+//
+//}
+func GetStaleEntries(diaryEntries DiaryEntries) []Object {
+	return lo.Filter(diaryEntries.Entries, func(item Object, index int) bool {
+		return item.LastEditedTime.After(diaryEntries.FetchTime)
+	})
 }

@@ -1,7 +1,14 @@
 package notion
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
+type DiaryEntries struct {
+	Entries   []Object
+	FetchTime time.Time
+}
 type QueryDataSourceReq struct {
 	StartCursor string `json:"start_cursor,omitempty"`
 }
@@ -13,9 +20,9 @@ type Object struct {
 	Object         string              `json:"object"`
 	ID             string              `json:"id"`
 	DataSources    []DataSource        `json:"data_sources,omitempty"`
-	CreatedTime    string              `json:"created_time"`
+	CreatedTime    time.Time           `json:"created_time"`
 	CreatedBy      PartialUser         `json:"created_by"`
-	LastEditedTime string              `json:"last_edited_time"`
+	LastEditedTime time.Time           `json:"last_edited_time"`
 	LastEditedBy   PartialUser         `json:"last_edited_by"`
 	Title          []RichText          `json:"title"`
 	Description    []RichText          `json:"description"`
@@ -33,33 +40,21 @@ type Object struct {
 // Property defines the schema for a single column in a database.
 // The configuration for the property is determined by its "type".
 type Property struct {
-	ID          string            `json:"id"`
-	Type        string            `json:"type"`
-	Name        string            `json:"name,omitempty"` // Name is not in the response for all endpoints
-	Title       *json.RawMessage  `json:"title,omitempty"`
-	RichText    *json.RawMessage  `json:"rich_text,omitempty"`
-	Number      *NumberProperty   `json:"number,omitempty"`
-	Select      *SelectProperty   `json:"select,omitempty"`
-	MultiSelect *SelectProperty   `json:"multi_select,omitempty"`
-	Status      *SelectProperty   `json:"status,omitempty"`
-	Date        *json.RawMessage  `json:"date,omitempty"`
-	Checkbox    *json.RawMessage  `json:"checkbox,omitempty"`
-	URL         *json.RawMessage  `json:"url,omitempty"`
-	Email       *json.RawMessage  `json:"email,omitempty"`
-	PhoneNumber *json.RawMessage  `json:"phone_number,omitempty"`
-	Formula     *FormulaProperty  `json:"formula,omitempty"`
-	Relation    *RelationProperty `json:"relation,omitempty"`
-	// Add other property types as needed (e.g., rollup, files, created_by, etc.)
+	ID          string           `json:"id"`
+	Type        string           `json:"type"`
+	Name        string           `json:"name,omitempty"` // Name is not in the response for all endpoints
+	Title       *json.RawMessage `json:"title,omitempty"`
+	RichText    *json.RawMessage `json:"rich_text,omitempty"`
+	Number      int              `json:"number,omitempty"`
+	Select      *SelectOption    `json:"select,omitempty"`
+	MultiSelect []SelectOption   `json:"multi_select,omitempty"`
+	Date        *DateProperty    `json:"date,omitempty"`
 }
 
-// NumberProperty holds the configuration for a "number" type property.
-type NumberProperty struct {
-	Format string `json:"format"` // e.g., "number", "number_with_commas", "percent"
-}
-
-// SelectProperty holds the configuration for "select", "multi_select", and "status" properties.
-type SelectProperty struct {
-	Options []SelectOption `json:"options"`
+type DateProperty struct {
+	Start    time.Time `json:"start"`
+	End      time.Time `json:"end"`
+	TimeZone string    `json:"time_zone,omitempty"`
 }
 
 // SelectOption is one of the available options for a select-style property.
@@ -68,23 +63,6 @@ type SelectOption struct {
 	Name  string `json:"name"`
 	Color string `json:"color"`
 }
-
-// FormulaProperty holds the configuration for a "formula" type property.
-type FormulaProperty struct {
-	Expression string `json:"expression"`
-}
-
-// RelationProperty holds the configuration for a "relation" type property.
-type RelationProperty struct {
-	DatabaseID string `json:"database_id"`
-	Type       string `json:"type"` // "single_property" or "dual_property"
-	// Depending on the type, there might be a single_property or dual_property object here.
-	// Using json.RawMessage for simplicity if you don't need to inspect them.
-	SingleProperty *json.RawMessage `json:"single_property,omitempty"`
-	DualProperty   *json.RawMessage `json:"dual_property,omitempty"`
-}
-
-// --- Previously defined structs (unchanged) ---
 
 // DataSource is a simplified reference to a data source.
 type DataSource struct {
@@ -137,8 +115,8 @@ type FileObject struct {
 
 // InternalFile represents a file hosted by Notion.
 type InternalFile struct {
-	URL        string `json:"url"`
-	ExpiryTime string `json:"expiry_time"`
+	URL        string    `json:"url"`
+	ExpiryTime time.Time `json:"expiry_time"`
 }
 
 // ExternalFile represents a file hosted on an external service.
