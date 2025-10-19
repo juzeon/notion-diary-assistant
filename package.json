@@ -13,12 +13,10 @@
   "dependencies": {
     "@notionhq/client": "^5.3.0",
     "@types/node": "^24.8.1",
-    "js-yaml": "^4.1.0",
+    "notion-to-md": "^3.1.9",
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.2",
-    "typescript": "^5.9.3"
-  },
-  "devDependencies": {
-    "@types/js-yaml": "^4.0.9"
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.1"
   }
 }
