@@ -1,0 +1,24 @@
+{
+  "name": "notion-diary-assistant",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "dependencies": {
+    "@notionhq/client": "^5.3.0",
+    "@types/node": "^24.8.1",
+    "js-yaml": "^4.1.0",
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
+}
