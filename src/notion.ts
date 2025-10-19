@@ -4,6 +4,8 @@ import {DiaryList, DiaryPage} from "@/types";
 import {logger} from "@/logger";
 import assert from "node:assert";
 import {NotionToMarkdown} from "notion-to-md";
+import {makeRetriable} from "p-retry";
+import {retryOptions} from "@/helpers";
 
 export class NotionClient {
     notion: Client
@@ -18,7 +20,8 @@ export class NotionClient {
     }
 
     async init() {
-        let database = await this.notion.databases.retrieve({database_id: this.config.database})
+        let database = await makeRetriable(this.notion.databases.retrieve,
+            retryOptions)({database_id: this.config.database})
         assert(isFullDatabase(database))
         this.dataSourceId = database.data_sources[0].id
         logger.debug({dataSourceId: this.dataSourceId})
@@ -30,7 +33,8 @@ export class NotionClient {
         let arr: DataSourceObjectResponse[] = []
         let nextCursor: string | null = ''
         while (nextCursor !== null) {
-            let dataSource = await this.notion.dataSources.query({
+            let dataSource = await makeRetriable(this.notion.dataSources.query,
+                retryOptions)({
                 data_source_id: this.dataSourceId,
                 start_cursor: startCursor ? startCursor : undefined,
                 sorts: [
@@ -47,7 +51,8 @@ export class NotionClient {
     }
 
     async getPage(id: string) {
-        let page = await this.notion.pages.retrieve({page_id: id})
+        let page = await makeRetriable(this.notion.pages.retrieve,
+            retryOptions)({page_id: id})
         assert(isFullPage(page))
         assert(this.config.fields.date in page.properties)
         assert(this.config.fields.wordCount in page.properties)
@@ -63,7 +68,7 @@ export class NotionClient {
     }
 
     async updatePage(diaryPage: DiaryPage) {
-        await this.notion.pages.update({
+        await makeRetriable(this.notion.pages.update, retryOptions)({
             page_id: diaryPage.page.id, properties: {
                 [this.config.fields.wordCount]: {type: 'number', number: diaryPage.wordCount}
             }
@@ -71,7 +76,7 @@ export class NotionClient {
     }
 
     async pageToMarkdown(id: string) {
-        const blocks = await this.n2m.pageToMarkdown(id);
+        const blocks = await makeRetriable(this.n2m.pageToMarkdown, retryOptions)(id);
         const mdString = this.n2m.toMarkdownString(blocks);
         return mdString.parent
     }

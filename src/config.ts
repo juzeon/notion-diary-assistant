@@ -11,14 +11,19 @@ export interface State {
 }
 
 export interface Last {
-    wordCount: string;
-    export: string;
+    wordCount: number;
+    export: number;
 }
 
 export interface Config {
     token: string;
     database: string;
     fields: Fields;
+    concurrency: Concurrency
+}
+
+export interface Concurrency {
+    notion: number
 }
 
 export function loadConfig() {
