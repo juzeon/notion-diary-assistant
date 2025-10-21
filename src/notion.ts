@@ -4,7 +4,7 @@ import {DiaryList, DiaryPage} from "@/types";
 import {logger} from "@/logger";
 import assert from "node:assert";
 import {NotionToMarkdown} from "notion-to-md";
-import {makeRetriable} from "p-retry";
+import pRetry, {makeRetriable} from "p-retry";
 import {retryOptions} from "@/helpers";
 
 export class NotionClient {
@@ -33,13 +33,14 @@ export class NotionClient {
         let arr: DataSourceObjectResponse[] = []
         let nextCursor: string | null = ''
         while (nextCursor !== null) {
+            logger.debug({nextCursor}, "Getting entries")
             let dataSource = await makeRetriable(this.notion.dataSources.query,
                 retryOptions)({
                 data_source_id: this.dataSourceId,
                 start_cursor: startCursor ? startCursor : undefined,
                 sorts: [
                     {
-                        "property": this.config.fields.date,
+                        "timestamp": "last_edited_time",
                         "direction": "descending"
                     }
                 ]
@@ -60,9 +61,11 @@ export class NotionClient {
         assert(dateProp.type === 'date')
         let wordCountProp = page.properties[this.config.fields.wordCount]
         assert(wordCountProp.type === 'number')
+        let date = dateProp.date?.start ?? '';
+        logger.debug({id: page.id, date}, "Fetched page")
         return <DiaryPage>{
             page,
-            date: dateProp.date?.start ?? '',
+            date,
             wordCount: wordCountProp.number ?? 0
         }
     }
@@ -73,10 +76,13 @@ export class NotionClient {
                 [this.config.fields.wordCount]: {type: 'number', number: diaryPage.wordCount}
             }
         })
+        logger.debug({id: diaryPage.page.id, date: diaryPage.date}, "Updated page")
     }
 
     async pageToMarkdown(id: string) {
-        const blocks = await makeRetriable(this.n2m.pageToMarkdown, retryOptions)(id);
+        const blocks = await pRetry(attemptNumber => {
+            return this.n2m.pageToMarkdown(id)
+        }, retryOptions);
         const mdString = this.n2m.toMarkdownString(blocks);
         return mdString.parent
     }
@@ -86,4 +92,11 @@ export function getStaleEntries(diaryList: DiaryList, baseTime: number) {
     return diaryList.entries.filter(value => {
         return Date.parse(value.last_edited_time) > baseTime
     })
+}
+
+export function diaryPagePropertiesToYamlHeader(page: DiaryPage) {
+    return `---
+date: ${page.date}
+wordCount: ${page.wordCount}
+---\n\n`
 }

@@ -31,6 +31,14 @@ export function loadConfig() {
 }
 
 export function loadState() {
+    if (!fs.existsSync("state.yml")) {
+        return {
+            last: {
+                export: 0,
+                wordCount: 0
+            }
+        } as State
+    }
     return YAML.parse(fs.readFileSync("state.yml", {encoding: 'utf-8'})) as State
 }
 

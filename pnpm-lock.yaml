@@ -17,6 +17,9 @@ importers:
       dedupe:
         specifier: ^4.0.3
         version: 4.0.3
+      filenamify:
+        specifier: ^7.0.0
+        version: 7.0.0
       notion-to-md:
         specifier: ^3.1.9
         version: 3.1.9
@@ -73,6 +76,14 @@ packages:
 
   fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+
+  filename-reserved-regex@4.0.0:
+    resolution: {integrity: sha512-9ZT504KxEQDamsOogZImAWGEN24R1uFAxU3ZS4AZqn2ooidmN68Olh7n4/RcA4lLatZztjA0ZSuxeLHVoCc8JA==}
+    engines: {node: '>=20'}
+
+  filenamify@7.0.0:
+    resolution: {integrity: sha512-nfY7iUozEErS4qKYu5X/DT+rafo43o642xAG/3AmZFp7chhVB20gsU4kH8KJZLDhyEZ2o4kHMSBDLDNBJ4r/cw==}
+    engines: {node: '>=20'}
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
@@ -225,6 +236,12 @@ snapshots:
   fast-copy@3.0.2: {}
 
   fast-safe-stringify@2.1.1: {}
+
+  filename-reserved-regex@4.0.0: {}
+
+  filenamify@7.0.0:
+    dependencies:
+      filename-reserved-regex: 4.0.0
 
   help-me@5.0.0: {}
 
