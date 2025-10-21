@@ -4,3 +4,4 @@ config.yml
 node_modules
 diaries
 state.yml
+dist
