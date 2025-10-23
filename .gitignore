@@ -5,3 +5,4 @@ node_modules
 diaries
 state.yml
 dist
+wordcloud.png
