@@ -29,7 +29,6 @@ export class NotionClient {
 
     async getAllEntries() {
         let now = Date.now()
-        let startCursor = ''
         let arr: DataSourceObjectResponse[] = []
         let nextCursor: string | null = ''
         while (nextCursor !== null) {
@@ -37,7 +36,7 @@ export class NotionClient {
             let dataSource = await makeRetriable(this.notion.dataSources.query,
                 retryOptions)({
                 data_source_id: this.dataSourceId,
-                start_cursor: startCursor ? startCursor : undefined,
+                start_cursor: nextCursor ? nextCursor : undefined,
                 sorts: [
                     {
                         "timestamp": "last_edited_time",
