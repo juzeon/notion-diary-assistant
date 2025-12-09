@@ -7,9 +7,11 @@
 
 import os
 import re
+import argparse
 from pathlib import Path
 from collections import Counter
 import jieba
+import jieba.posseg as pseg
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
@@ -85,34 +87,55 @@ def read_diary_files(diaries_dir):
     return '\n'.join(all_text)
 
 
-def segment_text(text, stopwords):
+def segment_text(text, stopwords, noun_only=False):
     """
     使用 jieba 进行中文分词
     
     Args:
         text: 待分词的文本
         stopwords: 停用词集合
+        noun_only: 是否只提取名词
     
     Returns:
         分词后的词语列表
     """
-    # 使用 jieba 分词
-    words = jieba.cut(text)
-    
-    # 过滤停用词、单字符和纯数字
     filtered_words = []
-    for word in words:
-        word = word.strip()
-        # 过滤条件：
-        # 1. 长度大于1
-        # 2. 不在停用词表中
-        # 3. 不是纯数字
-        # 4. 不是纯空格或标点
-        if (len(word) > 1 and 
-            word not in stopwords and 
-            not word.isdigit() and 
-            not re.match(r'^[\s\W]+$', word)):
-            filtered_words.append(word)
+    
+    if noun_only:
+        # 使用词性标注，只提取名词
+        print("正在使用词性标注模式，只提取名词...")
+        words_with_pos = pseg.cut(text)
+        
+        for word, flag in words_with_pos:
+            word = word.strip()
+            # 过滤条件：
+            # 1. 词性为名词（n开头）
+            # 2. 长度大于1
+            # 3. 不在停用词表中
+            # 4. 不是纯数字
+            # 5. 不是纯空格或标点
+            if (flag.startswith('n') and  # 名词词性
+                len(word) > 1 and 
+                word not in stopwords and 
+                not word.isdigit() and 
+                not re.match(r'^[\s\W]+$', word)):
+                filtered_words.append(word)
+    else:
+        # 普通分词模式
+        words = jieba.cut(text)
+        
+        for word in words:
+            word = word.strip()
+            # 过滤条件：
+            # 1. 长度大于1
+            # 2. 不在停用词表中
+            # 3. 不是纯数字
+            # 4. 不是纯空格或标点
+            if (len(word) > 1 and 
+                word not in stopwords and 
+                not word.isdigit() and 
+                not re.match(r'^[\s\W]+$', word)):
+                filtered_words.append(word)
     
     return filtered_words
 
@@ -162,6 +185,12 @@ def generate_wordcloud(words, output_path):
 
 def main():
     """主函数"""
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description='日记词云生成器')
+    parser.add_argument('--noun', action='store_true', 
+                        help='只提取名词生成词云')
+    args = parser.parse_args()
+    
     # 获取脚本所在目录的父目录（项目根目录）
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
@@ -173,6 +202,10 @@ def main():
     
     print("=" * 60)
     print("日记词云生成器")
+    if args.noun:
+        print("模式: 仅名词")
+    else:
+        print("模式: 全部词性")
     print("=" * 60)
     
     # 检查目录是否存在
@@ -196,7 +229,7 @@ def main():
     
     # 分词和过滤
     print("\n正在进行中文分词和停用词过滤...")
-    words = segment_text(all_text, stopwords)
+    words = segment_text(all_text, stopwords, noun_only=args.noun)
     
     if not words:
         print("错误: 分词后没有有效词语")
