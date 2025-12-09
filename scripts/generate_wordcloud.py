@@ -140,13 +140,16 @@ def segment_text(text, stopwords, noun_only=False):
     return filtered_words
 
 
-def generate_wordcloud(words, output_path):
+def save_word_freq_to_file(words, freq_file):
     """
-    生成词云图片
+    保存词频列表到文件
     
     Args:
         words: 词语列表
-        output_path: 输出图片路径
+        freq_file: 输出文件路径
+    
+    Returns:
+        词频统计字典
     """
     # 统计词频
     word_freq = Counter(words)
@@ -156,6 +159,60 @@ def generate_wordcloud(words, output_path):
     print("\n词频 Top 20:")
     for word, freq in word_freq.most_common(20):
         print(f"  {word}: {freq}")
+    
+    # 保存到文件
+    with open(freq_file, 'w', encoding='utf-8') as f:
+        for word, freq in word_freq.most_common():
+            f.write(f"{word} {freq}\n")
+    
+    print(f"\n词频列表已保存到: {freq_file}")
+    return word_freq
+
+
+def load_word_freq_from_file(freq_file):
+    """
+    从文件加载词频列表
+    
+    Args:
+        freq_file: 词频文件路径
+    
+    Returns:
+        词频统计字典
+    """
+    word_freq = {}
+    try:
+        with open(freq_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    word = ' '.join(parts[:-1])  # 词语可能包含空格
+                    try:
+                        freq = int(parts[-1])
+                        if freq > 0:  # 只保留频率大于0的词
+                            word_freq[word] = freq
+                    except ValueError:
+                        print(f"警告: 跳过无效行: {line}")
+        print(f"\n从文件加载了 {len(word_freq)} 个词语")
+    except Exception as e:
+        print(f"错误: 读取词频文件失败: {e}")
+    
+    return word_freq
+
+
+def generate_wordcloud(word_freq, output_path):
+    """
+    生成词云图片
+    
+    Args:
+        word_freq: 词频统计字典
+        output_path: 输出图片路径
+    """
+    if not word_freq:
+        print("错误: 词频字典为空，无法生成词云")
+        return
     
     # 创建词云对象
     # 使用系统中文字体
@@ -189,6 +246,8 @@ def main():
     parser = argparse.ArgumentParser(description='日记词云生成器')
     parser.add_argument('--noun', action='store_true', 
                         help='只提取名词生成词云')
+    parser.add_argument('--interactive', action='store_true',
+                        help='交互模式：生成词频列表文件供用户编辑后再生成词云')
     args = parser.parse_args()
     
     # 获取脚本所在目录的父目录（项目根目录）
@@ -199,6 +258,7 @@ def main():
     diaries_dir = project_root / 'diaries'
     stopwords_file = script_dir / 'stopwords.txt'
     output_path = project_root / 'wordcloud.png'
+    freq_file = project_root / 'word_freq.txt'
     
     print("=" * 60)
     print("日记词云生成器")
@@ -206,6 +266,8 @@ def main():
         print("模式: 仅名词")
     else:
         print("模式: 全部词性")
+    if args.interactive:
+        print("模式: 交互式")
     print("=" * 60)
     
     # 检查目录是否存在
@@ -235,9 +297,57 @@ def main():
         print("错误: 分词后没有有效词语")
         return
     
-    # 生成词云
-    print("\n正在生成词云图片...")
-    generate_wordcloud(words, output_path)
+    # 处理交互模式
+    if args.interactive:
+        # 保存词频列表到文件
+        word_freq = save_word_freq_to_file(words, freq_file)
+        
+        print("\n" + "=" * 60)
+        print("请编辑词频文件，然后回到控制台")
+        print(f"词频文件路径: {freq_file}")
+        print("=" * 60)
+        print("\n您可以:")
+        print("  - 删除不想要的词语（删除整行）")
+        print("  - 修改词语的频率（修改数字）")
+        print("  - 添加新词语（格式: 词语 频率）")
+        print("\n编辑完成后，输入 'y' 继续生成词云，输入其他任意键取消: ", end='')
+        
+        user_input = input().strip().lower()
+        
+        if user_input != 'y':
+            print("\n已取消生成词云")
+            return
+        
+        # 从文件重新加载词频
+        print("\n正在从编辑后的文件加载词频...")
+        word_freq = load_word_freq_from_file(freq_file)
+        
+        if not word_freq:
+            print("错误: 词频列表为空，无法生成词云")
+            return
+        
+        # 显示编辑后的 Top 20
+        print("\n编辑后词频 Top 20:")
+        sorted_freq = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+        for word, freq in sorted_freq[:20]:
+            print(f"  {word}: {freq}")
+        
+        # 生成词云
+        print("\n正在生成词云图片...")
+        generate_wordcloud(word_freq, output_path)
+    else:
+        # 非交互模式，直接生成词云
+        print("\n正在生成词云图片...")
+        from collections import Counter
+        word_freq = Counter(words)
+        
+        print(f"\n总共提取了 {len(words)} 个有效词语")
+        print(f"去重后有 {len(word_freq)} 个不同的词语")
+        print("\n词频 Top 20:")
+        for word, freq in word_freq.most_common(20):
+            print(f"  {word}: {freq}")
+        
+        generate_wordcloud(word_freq, output_path)
     
     print("\n" + "=" * 60)
     print("完成!")

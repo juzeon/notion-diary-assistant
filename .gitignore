@@ -6,3 +6,4 @@ diaries
 state.yml
 dist
 wordcloud.png
+word_freq.txt
