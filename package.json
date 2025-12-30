@@ -5,7 +5,8 @@
   "main": "src/main.ts",
   "scripts": {
     "cron": "tsx src/main.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "merge": "python3 scripts/merge_diaries.py"
   },
   "keywords": [],
   "author": "",
